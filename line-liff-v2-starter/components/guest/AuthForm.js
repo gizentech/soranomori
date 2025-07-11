@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -25,11 +25,8 @@ export default function AuthForm({ onAuthSuccess, liff }) {
   const [linkedGuest, setLinkedGuest] = useState(null);
   const [autoLoginChecking, setAutoLoginChecking] = useState(true);
 
-  useEffect(() => {
-    checkAutoLogin();
-  }, [liff]);
-
-  const checkAutoLogin = async () => {
+  // useCallback で checkAutoLogin をメモ化
+  const checkAutoLogin = useCallback(async () => {
     if (!liff || !liff.isLoggedIn()) {
       setAutoLoginChecking(false);
       return;
@@ -81,7 +78,11 @@ export default function AuthForm({ onAuthSuccess, liff }) {
     } finally {
       setAutoLoginChecking(false);
     }
-  };
+  }, [liff]);
+
+  useEffect(() => {
+    checkAutoLogin();
+  }, [checkAutoLogin]);
 
   const handleAutoLogin = () => {
     if (linkedGuest) {

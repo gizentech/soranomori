@@ -11,6 +11,7 @@ import {
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { useRouter } from 'next/router';
 import { db } from '../../lib/firebase';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { calculateAge, calculateMarriageAge } from '../../utils/dateUtils';
@@ -36,6 +37,7 @@ export default function GuestInfoForm({ guestData, liff }) {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const router = useRouter();
 
   const validateForm = () => {
     const errors = [];
@@ -74,6 +76,72 @@ export default function GuestInfoForm({ guestData, liff }) {
     }
     
     return errors;
+  };
+
+  const sendLineMessage = async (userId, messages) => {
+    try {
+      const response = await fetch('/api/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          messages
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Line message error:', error);
+      throw error;
+    }
+  };
+
+  const sendNotificationMessages = async (guestFormData) => {
+    // 完了通知メッセージ
+    const messages = [
+      {
+        type: 'text',
+        text: `${guestFormData.wife.name}様\n\nご登録ありがとうございました！\n初診用フォームの入力が完了いたしました。`
+      },
+      {
+        type: 'text',
+        text: '📋 初回採血時の持ち物\n\n・マイナンバーカード（または保険証）\n・お薬手帳\n・基礎体温表（お持ちの場合）\n\n※忘れずにお持ちください'
+      },
+      {
+        type: 'text',
+        text: '🚗 アクセス・駐車場のご案内\n\nクリニック専用駐車場をご利用いただけます。\n満車の場合は近隣のコインパーキングをご利用ください。\n\n詳しい場所はクリニックまでお問い合わせください。'
+      },
+      {
+        type: 'text',
+        text: `⏰ 初回採血予定日\n\n${guestData.wifeFirstBloodDate.toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short'
+        })}\n\n前日にリマインドメッセージをお送りいたします。`
+      },
+      {
+        type: 'text',
+        text: 'ご不明な点がございましたら、お気軽にクリニックまでお問い合わせください。\n\n空の森クリニック\nお電話: 0942-XXX-XXXX'
+      }
+    ];
+
+    // LINEユーザーIDがある場合のみメッセージ送信
+    if (guestData.lineUserId) {
+      try {
+        await sendLineMessage(guestData.lineUserId, messages);
+        console.log('LINE通知メッセージを送信しました');
+      } catch (error) {
+        console.error('LINE通知送信エラー:', error);
+        // エラーが発生してもフォーム送信は継続
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -132,55 +200,83 @@ export default function GuestInfoForm({ guestData, liff }) {
         completedAt: new Date()
       });
 
+      // セッションストレージのゲストデータも更新
+      const updatedGuestData = {
+        ...guestData,
+        isCompleted: true,
+        completedAt: new Date().toISOString()
+      };
+      sessionStorage.setItem('guestData', JSON.stringify({
+        ...updatedGuestData,
+        birthDate: updatedGuestData.birthDate.toISOString(),
+        wifeFirstBloodDate: updatedGuestData.wifeFirstBloodDate.toISOString(),
+        husbandFirstBloodDate: updatedGuestData.husbandFirstBloodDate.toISOString()
+      }));
+
+      // 成功メッセージ表示
       setMessage('登録が完了しました！ご協力ありがとうございました。');
       
-      // LIFFでメッセージを送信（注意事項など）
-      if (liff && liff.isLoggedIn()) {
-        try {
-          // 注意事項メッセージの送信
-          await sendNotificationMessages(guestFormData);
-        } catch (error) {
-          console.error('メッセージ送信エラー:', error);
-        }
-      }
+      // LINEに完了通知を送信
+      await sendNotificationMessages(guestFormData);
       
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Form submission error:', error);
       setMessage('エラーが発生しました。もう一度お試しください。');
     } finally {
       setLoading(false);
     }
   };
 
-  const sendNotificationMessages = async (guestFormData) => {
-    // 注意事項のメッセージテンプレート
-    const messages = [
-      {
-        type: 'text',
-        text: `${guestFormData.wife.name}様\n\n初診のご登録をありがとうございました。\n\n以下の点にご注意ください：`
-      },
-      {
-        type: 'text',
-        text: '📋 必要な持ち物\n・マイナンバーカード（保険証）\n・お薬手帳\n・基礎体温表（お持ちの場合）'
-      },
-      {
-        type: 'text',
-        text: '🚗 駐車場のご案内\nクリニック専用駐車場をご利用いただけます。満車の場合は近隣のコインパーキングをご利用ください。'
-      },
-      {
-        type: 'text',
-        text: `⏰ 初回採血予定日\n${new Date(guestData.wifeFirstBloodDate).toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}\n\n前日にリマインドメッセージをお送りします。`
-      }
-    ];
-
-    // LIFF Messaging APIを使用してメッセージ送信
-    // 実際の実装では適切なAPIエンドポイントを使用
-    console.log('送信予定メッセージ:', messages);
+  const handleGoToDashboard = () => {
+    router.push('/guest/dashboard');
   };
+
+  // 登録完了後の表示
+  if (message.includes('完了')) {
+    return (
+      <Card>
+        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+          <Alert severity="success" sx={{ mb: 3 }}>
+            {message}
+          </Alert>
+          
+          <Typography variant="h6" gutterBottom>
+            🎉 入力完了
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            初診用フォームの入力が完了いたしました。<br/>
+            注意事項やご案内をLINEメッセージでお送りしました。
+          </Typography>
+          
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.50', borderRadius: 1 }}>
+            <Typography variant="body2" color="primary.main">
+              📅 初回採血予定日<br/>
+              {guestData.wifeFirstBloodDate.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short'
+              })}
+            </Typography>
+          </Box>
+          
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2, mb: 3 }}>
+            前日にリマインドメッセージをお送りします
+          </Typography>
+
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleGoToDashboard}
+            sx={{ py: 1.5, fontSize: '1.1rem' }}
+          >
+            ダッシュボードへ
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -194,9 +290,9 @@ export default function GuestInfoForm({ guestData, liff }) {
             以下の項目をご入力ください。必須項目は必ずご記入をお願いします。
           </Typography>
           
-          {message && (
+          {message && !message.includes('完了') && (
             <Alert 
-              severity={message.includes('完了') ? "success" : "error"} 
+              severity="error" 
               sx={{ mb: 2 }}
             >
               {message}
@@ -223,7 +319,7 @@ export default function GuestInfoForm({ guestData, liff }) {
                   minWidth: 200
                 }}
               >
-                {loading ? <CircularProgress size={24} /> : '登録'}
+                {loading ? <CircularProgress size={24} /> : '登録完了'}
               </Button>
             </Box>
             

@@ -12,6 +12,8 @@ import {
   Chip
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { calculateAge } from '../../utils/dateUtils';
 import dayjs from 'dayjs';
 
@@ -60,23 +62,25 @@ export default function FormField({ field, value, onChange, section, formData })
 
     case 'date':
       return (
-        <Box>
-          <DatePicker
-            label={field.label}
-            value={value ? dayjs(value) : null}
-            onChange={(date) => handleChange(date)}
-            slotProps={{ textField: { fullWidth: true, required: field.required } }}
-          />
-          {field.autoCalculate === 'age' && value && (
-            <TextField
-              fullWidth
-              label="年齢"
-              value={calculateAge(value) || ''}
-              disabled
-              sx={{ mt: 2 }}
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Box>
+            <DatePicker
+              label={field.label}
+              value={value ? dayjs(value) : null}
+              onChange={(date) => handleChange(date?.toDate())}
+              slotProps={{ textField: { fullWidth: true, required: field.required } }}
             />
-          )}
-        </Box>
+            {field.autoCalculate === 'age' && value && (
+              <TextField
+                fullWidth
+                label="年齢"
+                value={calculateAge(value) || ''}
+                disabled
+                sx={{ mt: 2 }}
+              />
+            )}
+          </Box>
+        </LocalizationProvider>
       );
 
     case 'time':
@@ -98,6 +102,7 @@ export default function FormField({ field, value, onChange, section, formData })
           <Select
             value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
+            label={field.label}
           >
             {field.options.map(option => (
               <MenuItem key={option.value} value={option.value}>

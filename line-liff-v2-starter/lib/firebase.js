@@ -4,9 +4,9 @@ import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAyW0U3Q8WTnriP83uV1OstwquCjh7gIO8",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAyW0U3Q8WTnriP83uV1OstwqueCjh7gIO8",
   authDomain: "soranomori-life.firebaseapp.com",
-  projectId: "soranomori-life",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "soranomori-life",
   storageBucket: "soranomori-life.firebasestorage.app",
   messagingSenderId: "127658863597",
   appId: "1:127658863597:web:dbe3da38e71d66cd9e15e4",
