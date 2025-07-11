@@ -1,0 +1,187 @@
+{
+  "treatmentDesires": {
+    "title": "希望する診察",
+    "type": "checkbox",
+    "questions": [
+      {
+        "id": "infertility",
+        "label": "子供ができない",
+        "hasSubQuestions": true,
+        "subQuestions": [
+          {
+            "id": "generalInfertility",
+            "label": "一般不妊治療",
+            "condition": "infertility"
+          },
+          {
+            "id": "artificialInsemination",
+            "label": "人工授精",
+            "condition": "infertility"
+          },
+          {
+            "id": "ivf",
+            "label": "体外受精",
+            "condition": "infertility"
+          },
+          {
+            "id": "icsi",
+            "label": "顕微授精",
+            "condition": "infertility"
+          }
+        ]
+      },
+      {
+        "id": "menstrualIrregularity",
+        "label": "生理不順"
+      },
+      {
+        "id": "fertilityCheck",
+        "label": "子供ができるのかチェック"
+      },
+      {
+        "id": "other",
+        "label": "その他"
+      }
+    ]
+  },
+  "maritalStatus": {
+    "title": "婚姻状況",
+    "type": "select",
+    "options": [
+      { "value": "既婚", "label": "既婚" },
+      { "value": "未婚", "label": "未婚" }
+    ],
+    "conditionalFields": {
+      "既婚": [
+        {
+          "id": "marriageYear",
+          "label": "結婚した年",
+          "type": "number",
+          "required": true,
+          "validation": {
+            "min": 1950,
+            "max": "currentYear"
+          }
+        }
+      ]
+    }
+  },
+  "personalInfo": {
+    "wife": {
+      "title": "妻情報",
+      "fields": [
+        {
+          "id": "name",
+          "label": "氏名（漢字）",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "nameKana",
+          "label": "氏名（カナ）",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "birthDate",
+          "label": "生年月日",
+          "type": "date",
+          "required": true,
+          "autoCalculate": "age"
+        },
+        {
+          "id": "gender",
+          "label": "性別",
+          "type": "hidden",
+          "defaultValue": "妻"
+        },
+        {
+          "id": "occupation",
+          "label": "職業",
+          "type": "text"
+        },
+        {
+          "id": "workStartTime",
+          "label": "勤務開始時間",
+          "type": "time"
+        },
+        {
+          "id": "workEndTime",
+          "label": "勤務終了時間",
+          "type": "time"
+        },
+        {
+          "id": "holidays",
+          "label": "休日",
+          "type": "multiSelect",
+          "options": ["土", "日", "祝", "その他"]
+        },
+        {
+          "id": "pregnancyHistory",
+          "label": "妊娠歴",
+          "type": "number",
+          "min": 0,
+          "suffix": "回"
+        },
+        {
+          "id": "birthHistory",
+          "label": "出産歴",
+          "type": "number",
+          "min": 0,
+          "suffix": "回"
+        }
+      ]
+    },
+    "husband": {
+      "title": "夫情報",
+      "fields": [
+        {
+          "id": "name",
+          "label": "氏名（漢字）",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "nameKana",
+          "label": "氏名（カナ）",
+          "type": "text",
+          "required": true
+        },
+        {
+          "id": "birthDate",
+          "label": "生年月日",
+          "type": "date",
+          "required": true,
+          "autoCalculate": "age"
+        },
+        {
+          "id": "gender",
+          "label": "性別",
+          "type": "hidden",
+          "defaultValue": "夫"
+        },
+        {
+          "id": "occupation",
+          "label": "職業",
+          "type": "text"
+        },
+        {
+          "id": "workStartTime",
+          "label": "勤務開始時間",
+          "type": "time"
+        },
+        {
+          "id": "workEndTime",
+          "label": "勤務終了時間",
+          "type": "time"
+        },
+        {
+          "id": "holidays",
+          "label": "休日",
+          "type": "multiSelect",
+          "options": ["土", "日", "祝", "その他"]
+        }
+      ]
+    }
+  }
+}
